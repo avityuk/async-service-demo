@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.AsyncHandler;
 import com.ning.http.client.AsyncHttpClient;
+import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.HttpResponseBodyPart;
 import com.ning.http.client.HttpResponseHeaders;
 import com.ning.http.client.HttpResponseStatus;
@@ -25,17 +26,33 @@ public class GeocodingAsyncServlet extends HttpServlet {
 
 	private static Logger LOG = LoggerFactory.getLogger(GeocodingAsyncServlet.class);
 
-	private final AsyncHttpClient client = new AsyncHttpClient();
+	private static final int RESPONSE_TIMEOUT_MS = 10 * 1000;
+
+	private AsyncHttpClient client;
+
+	@Override
+	public void init() throws ServletException {
+		AsyncHttpClientConfig config = new AsyncHttpClientConfig.Builder()
+				.setConnectionTimeoutInMs(RESPONSE_TIMEOUT_MS)
+				.build();
+
+		client = new AsyncHttpClient(config);
+	}
+
+	@Override
+	public void destroy() {
+		client.close();
+	}
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		final AsyncContext asyncContext = req.startAsync();
-		asyncContext.setTimeout(10000);
 
 		final String address = req.getParameter("address");
 		asyncContext.start(new Runnable() {
 			@Override
 			public void run() {
+				LOG.info("Running context start");
 				try {
 					final ServletOutputStream os = asyncContext.getResponse().getOutputStream();
 
@@ -68,6 +85,7 @@ public class GeocodingAsyncServlet extends HttpServlet {
 								public String onCompleted() throws Exception {
 									os.flush();
 									asyncContext.complete();
+									LOG.info("Completed serving request");
 									return "DONE"; // not needed for us
 								}
 							});
@@ -76,6 +94,7 @@ public class GeocodingAsyncServlet extends HttpServlet {
 					asyncContext.complete(); // Release context on exception
 					throw new RuntimeException(e);
 				}
+				LOG.info("Completed context start");
 			}
 		});
 	}
