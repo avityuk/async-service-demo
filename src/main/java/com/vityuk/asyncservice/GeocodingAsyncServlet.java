@@ -1,7 +1,6 @@
 package com.vityuk.asyncservice;
 
 import java.io.IOException;
-import java.net.URLEncoder;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
@@ -33,17 +32,19 @@ public class GeocodingAsyncServlet extends HttpServlet {
 		final AsyncContext asyncContext = req.startAsync();
 		asyncContext.setTimeout(10000);
 
-		final String address = URLEncoder.encode(req.getParameter("address"), "UTF-8");
+		final String address = req.getParameter("address");
 		asyncContext.start(new Runnable() {
 			@Override
 			public void run() {
 				try {
 					final ServletOutputStream os = asyncContext.getResponse().getOutputStream();
 
-					client.prepareGet("http://maps.googleapis.com/maps/api/geocode/json?sensor=false&address=" + address)
+					client.prepareGet("http://maps.googleapis.com/maps/api/geocode/json?sensor=false")
+							.addQueryParameter("address", address)
 							.execute(new AsyncHandler<String>() {
 								@Override
 								public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+									// Status handling should be here
 									return STATE.CONTINUE;
 								}
 
@@ -72,7 +73,7 @@ public class GeocodingAsyncServlet extends HttpServlet {
 							});
 
 				} catch (IOException e) {
-					asyncContext.complete();
+					asyncContext.complete(); // Release context on exception
 					throw new RuntimeException(e);
 				}
 			}
