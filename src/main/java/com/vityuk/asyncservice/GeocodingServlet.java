@@ -21,13 +21,9 @@ public class GeocodingServlet extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		String address = req.getParameter("address");
-		if (address == null) {
-			throw new IllegalArgumentException("Address is required parameters");
-		}
+		String address = URLEncoder.encode(req.getParameter("address"), "UTF-8");
 
-		String addressEnc = URLEncoder.encode(address, "UTF-8");
-		URL url = new URL("http://maps.googleapis.com/maps/api/geocode/json?sensor=false&address=" + addressEnc);
+		URL url = new URL("http://maps.googleapis.com/maps/api/geocode/json?sensor=false&address=" + address);
 		URLConnection urlConnection = url.openConnection();
 		InputStream is = urlConnection.getInputStream();
 

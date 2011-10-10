@@ -1,5 +1,7 @@
 <html>
+<head>
+<title>Asynchronous Service Webapp<</title>
+</head>
 <body>
-	<h2>Asynchronous Service Webapp</h2>
 </body>
 </html>
