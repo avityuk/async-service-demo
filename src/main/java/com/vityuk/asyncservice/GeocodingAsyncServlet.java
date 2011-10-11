@@ -46,56 +46,53 @@ public class GeocodingAsyncServlet extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		final AsyncContext asyncContext = req.startAsync();
+		final long begin = System.currentTimeMillis();
 
 		final String address = req.getParameter("address");
-		asyncContext.start(new Runnable() {
-			@Override
-			public void run() {
-				LOG.info("Running context start");
-				try {
-					final ServletOutputStream os = asyncContext.getResponse().getOutputStream();
+		final AsyncContext asyncContext = req.startAsync();
+		try {
+			final ServletOutputStream os = asyncContext.getResponse().getOutputStream();
 
-					client.prepareGet("http://maps.googleapis.com/maps/api/geocode/json?sensor=false")
-							.addQueryParameter("address", address)
-							.execute(new AsyncHandler<String>() {
-								@Override
-								public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
-									// Status handling should be here
-									return STATE.CONTINUE;
-								}
+			client.prepareGet("http://maps.googleapis.com/maps/api/geocode/json?sensor=false")
+					.addQueryParameter("address", address)
+					.execute(new AsyncHandler<String>() {
+						@Override
+						public STATE onStatusReceived(HttpResponseStatus responseStatus) throws Exception {
+							// Status handling should be here
+							return STATE.CONTINUE;
+						}
 
-								@Override
-								public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
-									bodyPart.writeTo(os);
-									return STATE.CONTINUE;
-								}
+						@Override
+						public STATE onBodyPartReceived(HttpResponseBodyPart bodyPart) throws Exception {
+							bodyPart.writeTo(os);
+							return STATE.CONTINUE;
+						}
 
-								@Override
-								public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
-									return STATE.CONTINUE;
-								}
+						@Override
+						public STATE onHeadersReceived(HttpResponseHeaders headers) throws Exception {
+							return STATE.CONTINUE;
+						}
 
-								@Override
-								public void onThrowable(Throwable t) {
-									LOG.error("Error while calling service", t);
-								}
+						@Override
+						public void onThrowable(Throwable t) {
+							LOG.error("Error while calling service", t);
+						}
 
-								@Override
-								public String onCompleted() throws Exception {
-									os.flush();
-									asyncContext.complete();
-									LOG.info("Completed serving request");
-									return "DONE"; // not needed for us
-								}
-							});
+						@Override
+						public String onCompleted() throws Exception {
+							os.flush();
+							asyncContext.complete();
 
-				} catch (IOException e) {
-					asyncContext.complete(); // Release context on exception
-					throw new RuntimeException(e);
-				}
-				LOG.info("Completed context start");
-			}
-		});
+							long end = System.currentTimeMillis();
+							LOG.info("Completed serving request in {} milliseconds", (end - begin));
+							return "DONE"; // not needed for us
+						}
+					});
+
+		} catch (IOException e) {
+			asyncContext.complete(); // Release context on exception
+			LOG.info("Error while processing request", e);
+			throw new RuntimeException(e);
+		}
 	}
 }
