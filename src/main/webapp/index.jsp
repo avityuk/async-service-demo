@@ -6,11 +6,11 @@
 	<script type="text/javascript">
 		$(document).ready(function(){
 		   $("#call-sync").click(function(event){
-			   lookup("/geocode-sync");
+			   lookup("geocode-sync");
 		   });
 
 		   $("#call-async").click(function(event){
-			   lookup("/geocode-async");
+			   lookup("geocode-async");
 		   });
 		   
 		   function lookup(serviceUrl) {
